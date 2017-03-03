@@ -6,17 +6,13 @@
 
 
     <bean class="com.mchange.v2.c3p0.ComboPooledDataSource" id="dataSource">
-        <property name="jdbcUrl" value="${jdbc.url}"/>
-        <property name="driverClass" value="${jdbc.driver}"/>
-        <property name="user" value="${jdbc.user}"/>
-        <property name="password" value="${jdbc.password}"/>
-        <property name="minPoolSize" value="${jdbc.min.connections}"/>
-        <property name="maxPoolSize" value="${jdbc.max.connections}"/>
-        <property name="acquireIncrement" value="${jdbc.acquire.increment}"/>
-    </bean>
-
-    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-        <property name="dataSource" ref="dataSource"/>
+        <property name="jdbcUrl" value="jdbc:mysql://localhost/GoIT"/>
+        <property name="driverClass" value="com.mysql.jdbc.Driver"/>
+        <property name="user" value="root"/>
+        <property name="password" value="password"/>
+        <property name="minPoolSize" value="1"/>
+        <property name="maxPoolSize" value="10"/>
+        <property name="acquireIncrement" value="1"/>
     </bean>
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
