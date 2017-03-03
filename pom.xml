@@ -20,23 +20,6 @@
         </plugins>
     </build>
 
-    <profiles>
-        <profile>
-            <id>old system</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <configuration>
-                            <source>1.8</source>
-                            <target>1.5</target>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
     <dependencies>
 
         <dependency>
