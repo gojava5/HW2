@@ -11,6 +11,5 @@ import java.util.Collection;
  */
 public interface DeveloperDAO {
     boolean deleteById(int id);
-    Developer getById(int id);
     Developer create(int id, String name, int phone, BigDecimal salary, Collection<Skill> skills);
 }
