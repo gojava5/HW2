@@ -9,7 +9,9 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class JdbcDeveloperDao implements AbstractDeveloperDao {
     private static final Logger LOGGER= LoggerFactory.getLogger(JdbcDeveloperDao.class);
@@ -21,6 +23,12 @@ public class JdbcDeveloperDao implements AbstractDeveloperDao {
     private static final String UPDATE_SALARY = "UPDATE developers SET salary = ? WHERE id = ?";
     private static final String UPDATE_SKILL = "INSERT INTO developer_skills VALUES (?,?)";
     private static final String FIND_ID_SKILL = "SELECT id FROM skills WHERE name = ?";
+    private static final String DELETE_SKILL_SET = "DELETE FROM developer_skills WHERE developer_id = ?";
+    private static final String GET_SKILLS_BY_DEVELOPER_ID = "SELECT skills.id, skills.name FROM skills " +
+                                                            "JOIN developer_skills ON skills.id = developer_skills.skill_id " +
+                                                            "WHERE developer_skills.developer_id = ? " +
+                                                            "GROUP BY skills.name";
+
 
     private DataSource dataSource;
 
@@ -47,7 +55,7 @@ public class JdbcDeveloperDao implements AbstractDeveloperDao {
     public List<Developer> read(String firstName) {
         try (Connection connection = getConnection()) {
             try (PreparedStatement preparedStatement = connection.prepareStatement(GET_BY_FIRST_NAME_SQL)) {
-                preparedStatement.setString(1, "name");
+                preparedStatement.setString(1, firstName);
                 try( ResultSet resultSet = preparedStatement.executeQuery()){
                     LOGGER.info("Successfully executed GET_BY_FIRST_NAME_SQL query");
                     return getDevelopers(resultSet);
@@ -79,28 +87,82 @@ public class JdbcDeveloperDao implements AbstractDeveloperDao {
 
     @Override
     public boolean delete(Developer developer) {
-        try(Connection connection = getConnection()) {
+        Connection connection = null;
+        try {
+            connection = getConnection();
+            connection.setAutoCommit(false);
+            try (PreparedStatement preparedStatement = connection.prepareStatement(DELETE_SKILL_SET)){
+                preparedStatement.setInt(1,developer.getId());
+                preparedStatement.executeUpdate();
+            }
             try (PreparedStatement preparedStatement = connection.prepareStatement(DELETE_DEVELOPER)) {
                 preparedStatement.setInt(1, developer.getId());
                 preparedStatement.executeUpdate();
             }
-            return checkDeletedRows(connection);
+            boolean check = checkDeletedRows(connection);
+            connection.commit();
+            return check;
         } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException e1) {
+                LOGGER.error("Exception occurred while executing rollback for DELETE_SKILL_SET query");
+                throw new RuntimeException(e);
+            }
             LOGGER.error("Exception occurred while executing DELETE_DEVELOPER query");
             throw new RuntimeException(e);
+        }
+        finally {
+            if(connection != null){
+                try {
+                    connection.setAutoCommit(true);
+                    connection.close();
+                }
+                catch (SQLException e){
+                    LOGGER.error("Exception occurred while closing connection");
+                    throw new RuntimeException(e);
+                }
+            }
         }
     }
 
     public boolean delete(int id) {
-        try(Connection connection = getConnection()) {
+        Connection connection = null;
+        try {
+            connection = getConnection();
+            connection.setAutoCommit(false);
+            try (PreparedStatement preparedStatement = connection.prepareStatement(DELETE_SKILL_SET)){
+                preparedStatement.setInt(1, id);
+                preparedStatement.executeUpdate();
+            }
             try(PreparedStatement preparedStatement = connection.prepareStatement(DELETE_DEVELOPER)) {
                 preparedStatement.setInt(1, id);
                 preparedStatement.executeUpdate();
             }
-            return checkDeletedRows(connection);
+            boolean check = checkDeletedRows(connection);
+            connection.commit();
+            return check;
         } catch (SQLException e) {
+            try{
+                    connection.rollback();
+            } catch (SQLException e1) {
+                LOGGER.error("Exception occurred while executing rollback for DELETE_SKILL_SET query");
+                throw new RuntimeException(e);
+            }
             LOGGER.error("Exception occurred while executing DELETE_DEVELOPER query");
             throw new RuntimeException(e);
+        }
+        finally {
+            if(connection != null){
+                try {
+                    connection.setAutoCommit(true);
+                    connection.close();
+                }
+                catch (SQLException e){
+                    LOGGER.error("Exception occurred while closing connection");
+                    throw new RuntimeException(e);
+                }
+            }
         }
     }
 
@@ -130,17 +192,20 @@ public class JdbcDeveloperDao implements AbstractDeveloperDao {
             Integer skillId = null;
             try(PreparedStatement preparedStatement = connection.prepareStatement(FIND_ID_SKILL)) {
                 preparedStatement.setString(1, skill);
-                ResultSet resultSet = preparedStatement.executeQuery(FIND_ID_SKILL);
-                resultSet.next();
-                skillId = resultSet.getInt("id");
+                ResultSet resultSet = preparedStatement.executeQuery();
+                if (resultSet.next()){
+                    skillId = resultSet.getInt("id");
+                }
             }
-            if (skill != null){
+            if (skillId != null){
                 try (PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_SKILL)){
                     preparedStatement.setInt(1, developer.getId());
                     preparedStatement.setInt(2, skillId);
+                    preparedStatement.executeUpdate();
                     developer.getSkills().add(new Skill(skillId, skill));
                 }
             }
+            connection.commit();
             LOGGER.info("Successfully executed UPDATE_SKILL query");
             return developer;
         } catch (SQLException e) {
@@ -160,19 +225,42 @@ public class JdbcDeveloperDao implements AbstractDeveloperDao {
                     connection.close();
                 }
                 catch (SQLException e){
-                    LOGGER.error("Exception occurred while setting AutoCommit to False in UPDATE_SKILL query");
+                    LOGGER.error("Exception occurred while closing connection");
                     throw new RuntimeException(e);
                 }
             }
         }
     }
 
+    private Set<Skill> getSkillSet (int developerId){
+        try {
+            try(Connection connection = getConnection()){
+                try (PreparedStatement preparedStatement = connection.prepareStatement(GET_SKILLS_BY_DEVELOPER_ID)){
+                    preparedStatement.setInt(1, developerId);
+                    ResultSet resultSet = preparedStatement.executeQuery();
+                    Set <Skill> skillSet = new HashSet<>();
+                    while (resultSet.next()){
+                        int skillID = resultSet.getInt("id");
+                        String skillName = resultSet.getString("name");
+                        skillSet.add(new Skill(skillID,skillName));
+                    }
+                    return skillSet;
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.error("Error occured while executing GET_SKILLS_BY_DEVELOPER_ID querry");
+            throw new RuntimeException(e);
+        }
+    }
+
     private Developer getDeveloper(ResultSet resultSet) throws SQLException {
         Developer developer = new Developer();
-        developer.setId(resultSet.getInt("id"));
+        int id = resultSet.getInt("id");
+        developer.setId(id);
         developer.setFirstName(resultSet.getString("first_name"));
         developer.setLastName(resultSet.getString("last_name"));
         developer.setSalary(resultSet.getInt("salary"));
+        developer.setSkills(getSkillSet(id));
         return developer;
     }
 

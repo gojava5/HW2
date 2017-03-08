@@ -9,6 +9,8 @@ public class Developer {
     private int salary;
     private Set <Skill> skills;
 
+
+
     @Override
     public String toString() {
         return "Developer{" +
@@ -18,6 +20,30 @@ public class Developer {
                 ", salary=" + salary +
                 ", skills=" + skills +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Developer developer = (Developer) o;
+
+        if (id != developer.id) return false;
+        if (salary != developer.salary) return false;
+        if (firstName != null ? !firstName.equals(developer.firstName) : developer.firstName != null) return false;
+        if (lastName != null ? !lastName.equals(developer.lastName) : developer.lastName != null) return false;
+        return skills != null ? skills.equals(developer.skills) : developer.skills == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = id;
+        result = 31 * result + (firstName != null ? firstName.hashCode() : 0);
+        result = 31 * result + (lastName != null ? lastName.hashCode() : 0);
+        result = 31 * result + salary;
+        result = 31 * result + (skills != null ? skills.hashCode() : 0);
+        return result;
     }
 
     public Set<Skill> getSkills() {
