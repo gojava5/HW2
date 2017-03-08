@@ -28,7 +28,7 @@ public class jdbcDeveloperDAOTest {
     }
 
     @Test
-    public void testCreate() throws Exception {
+    public void testCreate() {
         org.junit.Assert.assertEquals(createDeveloper(), developerDAO.create(11, "Alex", 38088888, new BigDecimal(55555), createSkills()));
     }
 
