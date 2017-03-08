@@ -19,7 +19,6 @@ public class jdbcDeveloperDAO implements DeveloperDAO {
     private javax.sql.DataSource dataSource;
     private static final Logger LOGGER = LoggerFactory.getLogger(jdbcDeveloperDAO.class);
 
-
     public boolean deleteById(int id) {
         String SQL = "DELETE FROM developers WHERE id = ?";
         try (Connection connection = dataSource.getConnection();
