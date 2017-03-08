@@ -49,20 +49,20 @@ public class jdbcDeveloperDAO implements DeveloperDAO {
                     ps.setBigDecimal(4, salary);
                     ps.executeUpdate();
                 }
-            } else {
-                LOGGER.error("Not enough parameters to create developer.");
-            }
-            if (skills!=null) {
-                try (PreparedStatement ps =
-                             connection.prepareStatement(INSERT_COMPONENT_SQL)) {
-                    for (Skill skills1 : skills) {
-                        ps.setLong(1, skills1.getId());
-                        ps.setLong(2, id);
-                        ps.addBatch();
+                if (skills != null) {
+                    try (PreparedStatement ps =
+                                 connection.prepareStatement(INSERT_COMPONENT_SQL)) {
+                        for (Skill skills1 : skills) {
+                            ps.setLong(1, skills1.getId());
+                            ps.setLong(2, id);
+                            ps.addBatch();
+                        }
+                        ps.executeBatch();
                     }
-                    ps.executeBatch();
                 }
             }
+            else LOGGER.error("Not enough parameters to create developer.");
+
             developer = new Developer();
             developer.setId(id);
             developer.setSkills(skills);
