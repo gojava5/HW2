@@ -43,6 +43,26 @@ public class Developer {
                 '}';
     }
 
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        if (!super.equals(object)) return false;
+
+        Developer developer = (Developer) object;
+
+        if (phone != developer.phone) return false;
+        if (name != null ? !name.equals(developer.name) : developer.name != null) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        result = 31 * result + phone;
+        return result;
+    }
+
     public int getId() {
         return id;
     }
