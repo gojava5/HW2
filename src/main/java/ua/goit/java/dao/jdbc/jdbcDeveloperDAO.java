@@ -19,19 +19,6 @@ public class jdbcDeveloperDAO implements DeveloperDAO {
     private javax.sql.DataSource dataSource;
     private static final Logger LOGGER = LoggerFactory.getLogger(jdbcDeveloperDAO.class);
 
-    public boolean deleteById(int id) {
-        String SQL = "DELETE FROM developers WHERE id = ?";
-        try (Connection connection = dataSource.getConnection();
-        PreparedStatement ps = connection.prepareStatement(SQL)) {
-            ps.setInt(1, id);
-            ps.executeUpdate(SQL);
-            return true;
-        } catch (SQLException e) {
-            LOGGER.error("Exception occurred while connecting to DB");
-            return false;
-        }
-    }
-
     public Developer create(int id, String name, int phone, BigDecimal salary, Collection<Skill> skills) {
         Developer developer = null;
         final String INSERT_SQL = "insert into developers(id, name, phone, salary) values (?, ?, ?, ?)";
@@ -49,19 +36,20 @@ public class jdbcDeveloperDAO implements DeveloperDAO {
                     ps.setBigDecimal(4, salary);
                     ps.executeUpdate();
                 }
-                if (skills != null) {
-                    try (PreparedStatement ps =
-                                 connection.prepareStatement(INSERT_COMPONENT_SQL)) {
-                        for (Skill skills1 : skills) {
-                            ps.setLong(1, id);
-                            ps.setLong(2, skills1.getId());
-                            ps.addBatch();
-                        }
-                        ps.executeBatch();
+            } else {
+                LOGGER.error("Not enough parameters to create developer.");
+            }
+            if (skills!=null) {
+                try (PreparedStatement ps =
+                             connection.prepareStatement(INSERT_COMPONENT_SQL)) {
+                    for (Skill skills1 : skills) {
+                        ps.setLong(1, id);
+                        ps.setLong(2, skills1.getId());
+                        ps.addBatch();
                     }
+                    ps.executeBatch();
                 }
             }
-            else LOGGER.error("Not enough parameters to create developer.");
             developer = new Developer();
             developer.setId(id);
             developer.setSkills(skills);
@@ -88,8 +76,47 @@ public class jdbcDeveloperDAO implements DeveloperDAO {
         return developer;
     }
 
+    public Developer getById(int id) {
+        Developer developer = null;
+        final String GET_SQL = "select id, name, phone, salary from developers where id = ?";
+        final String GET_SKILLS = "SELECT name from skills s join\n" +
+                "dev_skill ds on (s.id=ds.skillID)\n" +
+                "where devID = ?";
+
+        try (Connection connection = dataSource.getConnection()) {
+            try (PreparedStatement ps = connection.prepareStatement(GET_SQL)) {
+                ps.setLong(1, id);
+                try (ResultSet resultSet = ps.executeQuery()) {
+                    if (!resultSet.next()) {
+                        return null;
+                    }
+                    developer = new Developer();
+                    developer.setId(resultSet.getInt("id"));
+                    developer.setName(resultSet.getString("name"));
+                    developer.setPhone(resultSet.getInt("phone"));
+                    developer.setSalary(resultSet.getBigDecimal("salary"));
+                }
+            }
+            try (PreparedStatement ps = connection.prepareStatement(GET_SKILLS)) {
+                ps.setLong(1, id);
+                try (ResultSet resultSet = ps.executeQuery()) {
+                    Collection<Skill> skills = new ArrayList<>();
+                    while (resultSet.next()) {
+                        Skill skill = new Skill();
+                        skill.setName(resultSet.getString("name"));
+                        skills.add(skill);
+                    }
+                    developer.setSkills(skills);
+                }
+            }
+            return developer;
+        } catch(SQLException e){
+            LOGGER.error("Exception occurred while connecting to DB");
+        }
+        return developer;
+    }
+
     public void setDataSource(javax.sql.DataSource dataSource) {
         this.dataSource = dataSource;
     }
-
 }

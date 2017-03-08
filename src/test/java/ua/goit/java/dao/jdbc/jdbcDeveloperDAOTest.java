@@ -23,20 +23,28 @@ public class jdbcDeveloperDAOTest {
 
 
     @Test
-    public void testDeleteById() throws Exception {
-        org.junit.Assert.assertTrue(developerDAO.deleteById(1));
+    public void testGetByID() {
+        org.junit.Assert.assertEquals(createDeveloper(), developerDAO.getById(11));
     }
 
     @Test
     public void testCreate() throws Exception {
+        org.junit.Assert.assertEquals(createDeveloper(), developerDAO.create(11, "Alex", 38088888, new BigDecimal(55555), createSkills()));
+    }
+
+    private Developer createDeveloper() {
         Developer developer = new Developer();
-        developer.setId(77);
+        developer.setId(11);
         developer.setName("Alex");
         developer.setPhone(38088888);
         developer.setSalary(new BigDecimal(55555));
+        developer.setSkills(createSkills());
+        return developer;
+    }
+
+    private ArrayList<Skill> createSkills() {
         ArrayList<Skill> skills = new ArrayList<>();
         skills.add(new Skill(1, "Java"));
-        developer.setSkills(skills);
-
-        org.junit.Assert.assertEquals(developer, developerDAO.create(10, "Alex", 38088888, new BigDecimal(55555), skills));
+        return skills;
     }
+}
