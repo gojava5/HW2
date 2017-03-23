@@ -1,19 +1,25 @@
 package model;
 
+import javax.persistence.*;
 
+@Entity
+@Table (name = "skills")
 public class Skill {
+
+    @Id
+    @GeneratedValue (strategy = GenerationType.IDENTITY)
     private int id;
+
+    @Column (name = "name")
     private String name;
+
+    public Skill() {
+    }
 
     public Skill(int id, String name) {
         this.id = id;
         this.name = name;
     }
-
-//    @Override
-//    public String toString() {
-//        return "Skill:" + name;
-//    }
 
 
     @Override

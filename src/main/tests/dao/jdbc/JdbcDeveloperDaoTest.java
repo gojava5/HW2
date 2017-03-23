@@ -6,11 +6,10 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -24,19 +23,16 @@ public class JdbcDeveloperDaoTest {
 
     @Test
     public void getAll() throws Exception {
-        jdbcDeveloperDao.getAll().forEach(System.out::println);
         Assert.assertNotNull(jdbcDeveloperDao.getAll());
     }
 
     @Test
     public void read() throws Exception {
-        jdbcDeveloperDao.read("Peter").forEach(System.out::println);
         Assert.assertNotNull(jdbcDeveloperDao.read("Peter"));
     }
 
     @Test
     public void read1() throws Exception {
-        jdbcDeveloperDao.read("Bernard", "Lowe").forEach(System.out::println);
         Assert.assertNotNull(jdbcDeveloperDao.read("Bernard", "Lowe"));
     }
 
@@ -45,15 +41,12 @@ public class JdbcDeveloperDaoTest {
         //        Type name of Developer to make test
         String name = "Jimmy";
         Developer testDeveloper = jdbcDeveloperDao.read(name).get(0);
-        System.out.println("Initial list of Developers: ");
-        jdbcDeveloperDao.getAll().forEach(System.out::println);
+        List initialDevelopers = jdbcDeveloperDao.getAll();
+        initialDevelopers.remove(testDeveloper);
         int id = testDeveloper.getId();
         Assert.assertTrue(jdbcDeveloperDao.delete(id));
-        System.out.println("List of Developers after deletion: ");
-        jdbcDeveloperDao.getAll().forEach(System.out::println);
-        System.out.println("--------------------");
-        System.out.println("Looking for " +name +" : ");
-        jdbcDeveloperDao.read(name).forEach(System.out::println);
+        List finalList = jdbcDeveloperDao.getAll();
+        Assert.assertEquals(initialDevelopers, finalList);
     }
 
     @Test
@@ -61,28 +54,19 @@ public class JdbcDeveloperDaoTest {
 //        Type name of Developer to make test
         String name = "Illia";
         Developer testDeveloper = jdbcDeveloperDao.read(name).get(0);
-        System.out.println("Initial list of Developers: ");
-        jdbcDeveloperDao.getAll().forEach(System.out::println);
+        List initialDevelopers = jdbcDeveloperDao.getAll();
         Assert.assertTrue(jdbcDeveloperDao.delete(testDeveloper));
-        System.out.println("List of Developers after deletion: ");
-        jdbcDeveloperDao.getAll().forEach(System.out::println);
-        System.out.println("--------------------");
-        System.out.println("Looking for " +name +" : ");
-        jdbcDeveloperDao.read(name).forEach(System.out::println);
+        List finalList = jdbcDeveloperDao.getAll();
+        Assert.assertEquals(initialDevelopers, finalList);
     }
 
     @Test
     public void updateSalary() throws Exception {
 
         Developer testDeveloper = jdbcDeveloperDao.read("Han").get(0);
-        System.out.println("Starting salary: " + testDeveloper.getSalary());
         jdbcDeveloperDao.updateSalary(testDeveloper,9000);
         testDeveloper.setSalary(9000);
-        System.out.printf("New salary: " + testDeveloper.getSalary());
         Assert.assertEquals(testDeveloper,jdbcDeveloperDao.read("Han").get(0));
-
-
-
     }
 
     @Test
@@ -92,10 +76,8 @@ public class JdbcDeveloperDaoTest {
 
         Developer resultDeveloper = jdbcDeveloperDao.updateSkill(testDeveloper,"CSS");
         Set <Skill> skills = testDeveloper.getSkills();
-        System.out.println("Starting skills: " + skills);
         skills.add(testSkill);
         testDeveloper.setSkills(skills);
-        System.out.println("Updated skills: " + skills);
         Assert.assertEquals(testDeveloper, resultDeveloper);
         Assert.assertEquals(testDeveloper, jdbcDeveloperDao.read("Han").get(0));
 
